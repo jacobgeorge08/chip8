@@ -28,7 +28,7 @@ const FONTSET: [u8; FONTSET_SIZE] = [
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
-// 0 sprite after hexadecimal is converted to binary. Looks like 0 if you squint :P
+// 0 sprite after hexadecimal is encoded to binary. Looks like 0 if you squint :P
 // 11110000
 // 10010000
 // 10010000
@@ -90,5 +90,44 @@ impl Emu {
         self.dt = 0;
         self.st = 0;
         self.ram[..FONTSET_SIZE].copy_from_slice(&FONTSET);
+    }
+
+    pub fn tick(&mut self) {
+        // fetch
+        let op = self.fetch();
+        // decode + execute
+        self.execute(op);
+    }
+
+    fn fetch(&mut self) -> u16 {
+        let higher_byte = self.ram[self.pc as usize] as u16;
+        let lower_byte = self.ram[(self.pc + 1) as usize] as u16;
+        let op = (higher_byte << 8) | lower_byte;
+        self.pc += 2;
+        op
+    }
+
+    pub fn tick_timers(&mut self) {
+        if self.dt > 0 {
+            self.dt -= 1;
+        }
+
+        if self.st > 0 {
+            if self.st == 1 {
+                // BEEP
+            }
+            self.st -= 1
+        }
+    }
+
+    fn execute(&mut self, op: u16) {
+        let digit1 = (op & 0xF000) >> 12;
+        let digit2 = (op & 0x0F00) >> 8;
+        let digit3 = (op & 0x00F0) >> 4;
+        let digit4 = (op & 0x000F);
+
+        match (digit1, digit2, digit3, digit4) {
+            (_, _, _, _) => unimplemented!("Unimplemented opcode : {}", op),
+        }
     }
 }
