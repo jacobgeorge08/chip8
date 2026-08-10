@@ -127,6 +127,88 @@ impl Emu {
         let digit4 = (op & 0x000F);
 
         match (digit1, digit2, digit3, digit4) {
+            // No Operation
+            (0, 0, 0, 0) => return,
+            // Clear Screen
+            (0, 0, 0xE, 0) => self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT],
+            // Return From subroutine
+            (0, 0, 0xE, 0xE) => {
+                let return_addr = self.pop();
+                self.pc = return_addr;
+            }
+            // Jump to NNN
+            // Not 0xFFFF because first digit is the 0 we know
+            (1, _, _, _) => {
+                let nnn = (op & 0xFFF);
+                self.pc = nnn;
+            }
+            // Call subroutine at NNN
+            (2, _, _, _) => {
+                let nnn = (op & 0xFFF);
+                self.push(self.pc);
+                self.pc = nnn;
+            }
+            // Skip Vx == NN
+            (3, _, _, _) => {
+                let x = digit2 as usize;
+                let nn = (op & 0xFF) as u8;
+                if self.v_reg[x] == nn {
+                    self.pc += 2;
+                }
+            }
+            // Skip Vx != NN
+            (4, _, _, _) => {
+                let x = digit2 as usize;
+                let nn = (op & 0xFF) as u8;
+                if self.v_reg[x] != nn {
+                    self.pc += 2;
+                }
+            }
+            // Skip Vx == Vy
+            (5, _, _, 0) => {
+                let x = digit2 as usize;
+                let y = digit3 as usize;
+                if self.v_reg[x] == self.v_reg[y] {
+                    self.pc += 2;
+                }
+            }
+            // Vx = NN
+            (6, _, _, _) => {
+                let x = digit2 as usize;
+                let nn = (op & 0xFF) as u8;
+                self.v_reg[x] = nn;
+            }
+            // Vx += NN
+            // wrapping add because rust will panic if overflow
+            (7, _, _, _) => {
+                let x = digit2 as usize;
+                let nn = (op & 0xFF) as u8;
+                self.v_reg[x] = self.v_reg[x].wrapping_add(nn);
+            }
+            // Vx = Vy
+            (8, _, _, 0) => {
+                let x = digit2 as usize;
+                let y = digit3 as usize;
+                self.v_reg[x] = self.v_reg[y];
+            }
+            // Vx |= Vy
+            (8, _, _, 1) => {
+                let x = digit2 as usize;
+                let y = digit3 as usize;
+                self.v_reg[x] |= self.v_reg[y];
+            }
+            // Vx &= Vy
+            (8, _, _, 2) => {
+                let x = digit2 as usize;
+                let y = digit3 as usize;
+                self.v_reg[x] &= self.v_reg[y];
+            }
+            // Vx ^= Vy
+            (8, _, _, 3) => {
+                let x = digit2 as usize;
+                let y = digit3 as usize;
+                self.v_reg[x] ^= self.v_reg[y];
+            }
             (_, _, _, _) => unimplemented!("Unimplemented opcode : {}", op),
         }
     }
