@@ -294,7 +294,7 @@ impl Emu {
                 let x = digit2 as usize;
                 self.v_reg[x] = self.dt;
             }
-            // Wait key
+            // Wait Key
             (0xF, _, 0, 0xA) => {
                 let x = digit2 as usize;
                 let mut pressed = false;
@@ -308,6 +308,57 @@ impl Emu {
                 // redo opcode
                 if !pressed {
                     self.pc -= 2;
+                }
+            }
+            // dt = Vx
+            (0xF, _, 1, 5) => {
+                let x = digit2 as usize;
+                self.dt = self.v_reg[x];
+            }
+            // st = Vx
+            (0xF, _, 1, 8) => {
+                let x = digit2 as usize;
+                self.st = self.v_reg[x];
+            }
+            // I += Vx
+            (0xF, _, 1, 0xE) => {
+                let x = digit2 as usize;
+                let vx = self.v_reg[x] as u16;
+                self.i_reg = self.i_reg.wrapping_add(vx);
+            }
+            // I = Font
+            (0xF, _, 2, 9) => {
+                let x = digit2 as usize;
+                let char_sprite = self.v_reg[x] as u16;
+                self.i_reg = char_sprite * 5;
+            }
+            // Binary Coded Decimal
+            (0xF, _, 3, 3) => {
+                let x = digit2 as usize;
+                let vx = self.v_reg[x] as f32;
+
+                let hundreds = (vx / 100.0).floor() as u8;
+                let tens = ((vx / 10.0) % 10.0).floor() as u8;
+                let ones = (vx % 10.0) as u8;
+
+                self.ram[self.i_reg as usize] = hundreds;
+                self.ram[(self.i_reg + 1) as usize] = tens;
+                self.ram[(self.i_reg + 2) as usize] = ones;
+            }
+            // Store V0 - Vx
+            (0xF, _, 5, 5) => {
+                let x = digit2 as usize;
+                let i = self.i_reg as usize;
+                for idx in 0..=x {
+                    self.ram[i + idx] = self.v_reg[idx];
+                }
+            }
+            // Load V0 - Vx
+            (0xF, _, 6, 5) => {
+                let x = digit2 as usize;
+                let i = self.i_reg as usize;
+                for idx in 0..=x {
+                    self.v_reg[idx] = self.ram[i + idx];
                 }
             }
             (_, _, _, _) => unimplemented!("Unimplemented opcode : {}", op),
