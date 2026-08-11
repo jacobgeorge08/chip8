@@ -256,7 +256,7 @@ impl Emu {
                 self.i_reg = nnn;
             }
             // Jump V0 + NNN
-            (OxB, _, _, _) => {
+            (0xB, _, _, _) => {
                 let nnn = op & 0xFFF;
                 self.pc = (self.v_reg[0] as u16) + nnn;
             }
