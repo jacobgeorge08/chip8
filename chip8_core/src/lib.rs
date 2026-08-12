@@ -269,7 +269,33 @@ impl Emu {
             }
             // Draw (Vx, Vy, N)
             (0xD, _, _, _) => {
-                // TODO
+                // Get (x, y) coordinate for sprite
+                let x_coord = self.v_reg[digit2 as usize] as u16;
+                let y_coord = self.v_reg[digit3 as usize] as u16;
+                // N is the height of our sprite aka how many rows tall
+                let num_rows = digit4;
+                // collision detection
+                let mut flipped = false;
+                for y_line in 0..num_rows {
+                    let addr = self.i_reg + y_line as u16;
+                    let pixels = self.ram[addr as usize];
+                    for x_line in 0..8 {
+                        // bitmask to fetch current pixels bit. Only flip if its 1
+                        if (pixels & (0b1000_0000 >> x_line)) != 0 {
+                            let x = (x_coord + x_line) as usize % SCREEN_WIDTH;
+                            let y = (y_coord + y_line) as usize % SCREEN_HEIGHT;
+                            let idx = x + SCREEN_WIDTH * y;
+                            flipped |= self.screen[idx];
+                            self.screen[idx] ^= true;
+                        }
+                    }
+                }
+                // Populate Vf register
+                if flipped {
+                    self.v_reg[0xF] = 1;
+                } else {
+                    self.v_reg[0xF] = 0;
+                }
             }
             // Skip Key Press
             (0xE, _, 9, 0xE) => {
