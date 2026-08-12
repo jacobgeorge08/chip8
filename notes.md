@@ -72,11 +72,17 @@
     - Since our PC begins at 0x200, we're gonna be using those first 512 bytes to store sprite
         data. Just the 16 hexadecimal characters ie 0-9 and A-F.
     - Each character takes 5 bytes of data.
-    - 0 sprite after hexadecimal is encoded to binary. Looks like 0 if you squint :P
+    - 0 sprite after hexadecimal [0xF0, 0x90, 0x90, 0x90, 0xF0] is encoded to binary. Looks like 0 if you squint :P
       11110000
       10010000
       10010000
       10010000
+      11110000
+    - Sprite for 5 [0xF0, 0x80, 0xF0, 0x10, 0xF0] 
+      11110000
+      10000000
+      11110000
+      00010000
       11110000
 ### Fetch 
     - Each instruction is two bytes long. Also everything is big endian.
@@ -86,7 +92,31 @@
     - Pass this to our decode function and let it pattern match
 ### Decode
     - Just a huge match statement that we implement by looking at the spec
+    - One thing that was new to me was how individual digits are extracted from the opcode
+    - We basically & the opcode with a bitmask and then right shift (>>) the digits to get 
+        the units place we want 
 ### Calling Subroutines
     - We push the current instruction from the PC to the stack and we set the PC to 
         NNN (subroutine instruction)
 
+### Unorganized notes
+    - The v_registers have their data in 8 bit values
+        - To get the least significant bit from the a particular register, we can & the 8bit val with 1
+        - To get the most significant bit, we right shift the byte by & and then & with 1
+    - For opcode FX0A where we wait for a keypress, we reset the pc to the 
+        previous instruction if a key is not pressed after looping through the keys
+        array because this avoid us missing a key that is pressed if we were to have
+        instead used an infinite loop 
+    - For opcode FX29, we store our font data (0-9 and A-F) starting at the beginning of RAM (index 0)
+        - Each character takes 5 bytes of data each. So all we have to do to find the character in ram
+            is take the character from the v_reg, multiply by 5 and set that as the i_reg value.
+    - Opcode FX33 is where we convert our hexadecimal numbers into base10 decimals because when
+        we print out things like high scores of our players etc, itd be a little jarring to 
+        see 0x64 instead of a high score of 100. We just use division, modulo and .floor() to pull
+        out and convert to the numbers we need
+    - Opcode DXYN
+        - Probably the hardest opcode becuase theres so much going on. 
+        - We get the x and y coordinates from the v_registers and the height from digit4 of opcode
+        - Iterate through the rows and get the mem_addr for ram which is stored in i_reg + an offset
+        - Get the pixels for a row using the ram addr and compare with a bitmask to see if its a 1
+        - If it is, we attempt to draw to screen.
