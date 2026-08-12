@@ -133,7 +133,7 @@ impl Emu {
         let digit1 = (op & 0xF000) >> 12;
         let digit2 = (op & 0x0F00) >> 8;
         let digit3 = (op & 0x00F0) >> 4;
-        let digit4 = (op & 0x000F);
+        let digit4 = op & 0x000F;
 
         match (digit1, digit2, digit3, digit4) {
             // No Operation
