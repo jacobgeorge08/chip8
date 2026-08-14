@@ -19,7 +19,7 @@
     - MonoChrome display
     - 64 x 32 screen and sprites (8pixel x 1..=15pixel) that are XOR'd with the screen
         - When collision happens, you invert the screen
-## Input
+### Input
     - hexkeyboard from 0 to f
     - Three opcodes track input
         - One skips instruction if a button is pressed
@@ -35,8 +35,10 @@
         - PC is the Program Counter
         - I is the 12 memory address register
         - VN  is one of the 16 variables where N is a variable from 0 to F 
-
 ## Thoughts while impl Emu
+### Bittwidling Notes
+    - x << y will shift x to the left by y places. It is the same as multiplying x by 2**y
+    - x >> y will shift x by y places right. It is the same as dividing x by 2**y 
 ### ROMS
     - ROMS aka read only memory are our game files. 
     - Cant be opened with a regular editor because they dont store text or ascii
@@ -91,18 +93,14 @@
         to get our current opcode that we need to execute
     - Pass this to our decode function and let it pattern match
 ### Decode
+    - The v_registers have their data in 8 bit values
+        - To get the least significant bit from the a particular register, we can & the 8bit val with 1
+        - To get the most significant bit, we right shift the byte by & and then & with 1
     - Just a huge match statement that we implement by looking at the spec
     - One thing that was new to me was how individual digits are extracted from the opcode
     - We basically & the opcode with a bitmask and then right shift (>>) the digits to get 
         the units place we want 
-### Calling Subroutines
-    - We push the current instruction from the PC to the stack and we set the PC to 
-        NNN (subroutine instruction)
-
-### Unorganized notes
-    - The v_registers have their data in 8 bit values
-        - To get the least significant bit from the a particular register, we can & the 8bit val with 1
-        - To get the most significant bit, we right shift the byte by & and then & with 1
+### Opcodes
     - For opcode FX0A where we wait for a keypress, we reset the pc to the 
         previous instruction if a key is not pressed after looping through the keys
         array because this avoid us missing a key that is pressed if we were to have
@@ -120,3 +118,6 @@
         - Iterate through the rows and get the mem_addr for ram which is stored in i_reg + an offset
         - Get the pixels for a row using the ram addr and compare with a bitmask to see if its a 1
         - If it is, we attempt to draw to screen.
+### Calling Subroutines
+    - We push the current instruction from the PC to the stack and we set the PC to 
+        NNN (subroutine instruction)
