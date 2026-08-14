@@ -147,18 +147,18 @@ impl Emu {
             }
             // Jump to NNN
             // Not 0xFFFF because first digit is the 0 we know
-            (1, _, _, _) => {
+            (0x1, _, _, _) => {
                 let nnn = op & 0xFFF;
                 self.pc = nnn;
             }
             // Call subroutine at NNN
-            (2, _, _, _) => {
+            (0x2, _, _, _) => {
                 let nnn = op & 0xFFF;
                 self.push(self.pc);
                 self.pc = nnn;
             }
             // Skip Vx == NN
-            (3, _, _, _) => {
+            (0x3, _, _, _) => {
                 let x = digit2 as usize;
                 let nn = (op & 0xFF) as u8;
                 if self.v_reg[x] == nn {
@@ -166,7 +166,7 @@ impl Emu {
                 }
             }
             // Skip Vx != NN
-            (4, _, _, _) => {
+            (0x4, _, _, _) => {
                 let x = digit2 as usize;
                 let nn = (op & 0xFF) as u8;
                 if self.v_reg[x] != nn {
@@ -174,7 +174,7 @@ impl Emu {
                 }
             }
             // Skip Vx == Vy
-            (5, _, _, 0) => {
+            (0x5, _, _, 0x0) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 if self.v_reg[x] == self.v_reg[y] {
@@ -182,44 +182,44 @@ impl Emu {
                 }
             }
             // Vx = NN
-            (6, _, _, _) => {
+            (0x6, _, _, _) => {
                 let x = digit2 as usize;
                 let nn = (op & 0xFF) as u8;
                 self.v_reg[x] = nn;
             }
             // Vx += NN
             // wrapping add because rust will panic if overflow
-            (7, _, _, _) => {
+            (0x7, _, _, _) => {
                 let x = digit2 as usize;
                 let nn = (op & 0xFF) as u8;
                 self.v_reg[x] = self.v_reg[x].wrapping_add(nn);
             }
             // Vx = Vy
-            (8, _, _, 0) => {
+            (0x8, _, _, 0x0) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 self.v_reg[x] = self.v_reg[y];
             }
             // Vx |= Vy
-            (8, _, _, 1) => {
+            (0x8, _, _, 0x1) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 self.v_reg[x] |= self.v_reg[y];
             }
             // Vx &= Vy
-            (8, _, _, 2) => {
+            (0x8, _, _, 0x2) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 self.v_reg[x] &= self.v_reg[y];
             }
             // Vx ^= Vy
-            (8, _, _, 3) => {
+            (0x8, _, _, 0x3) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 self.v_reg[x] ^= self.v_reg[y];
             }
             // Vx += Vy
-            (8, _, _, 4) => {
+            (0x8, _, _, 0x4) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 let (new_vx, carry) = self.v_reg[x].overflowing_add(self.v_reg[y]);
@@ -227,7 +227,7 @@ impl Emu {
                 self.v_reg[x] = new_vx;
             }
             // Vx -= Vy
-            (8, _, _, 5) => {
+            (0x8, _, _, 0x5) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 let (new_vx, borrow) = self.v_reg[x].overflowing_sub(self.v_reg[y]);
@@ -235,14 +235,14 @@ impl Emu {
                 self.v_reg[x] = new_vx;
             }
             // Vx >>= 1
-            (8, _, _, 6) => {
+            (0x8, _, _, 0x6) => {
                 let x = digit2 as usize;
                 let lsb = self.v_reg[x] & 1;
                 self.v_reg[x] >>= 1;
                 self.v_reg[0xF] = lsb;
             }
             // Vx = Vy - Vx
-            (8, _, _, 7) => {
+            (0x8, _, _, 0x7) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 let (new_vx, borrow) = self.v_reg[y].overflowing_sub(self.v_reg[x]);
@@ -250,14 +250,14 @@ impl Emu {
                 self.v_reg[0xF] = if borrow { 0 } else { 1 };
             }
             // Vx <<= 1
-            (8, _, _, 0xE) => {
+            (0x8, _, _, 0xE) => {
                 let x = digit2 as usize;
                 let msb = (self.v_reg[x] >> 7) & 1;
                 self.v_reg[x] <<= 1;
                 self.v_reg[0xF] = msb;
             }
             // Vx != Vy
-            (9, _, _, 0) => {
+            (0x9, _, _, 0) => {
                 let x = digit2 as usize;
                 let y = digit3 as usize;
                 if self.v_reg[x] != self.v_reg[y] {
@@ -312,7 +312,7 @@ impl Emu {
                 }
             }
             // Skip Key Press
-            (0xE, _, 9, 0xE) => {
+            (0xE, _, 0x9, 0xE) => {
                 let x = digit2 as usize;
                 let vx = self.v_reg[x];
                 let key = self.keys[vx as usize];
@@ -321,7 +321,7 @@ impl Emu {
                 }
             }
             // Skip Key Release
-            (0xE, _, 0xA, 1) => {
+            (0xE, _, 0xA, 0x1) => {
                 let x = digit2 as usize;
                 let vx = self.v_reg[x];
                 let key = self.keys[vx as usize];
@@ -330,12 +330,12 @@ impl Emu {
                 }
             }
             // Vx = dt
-            (0xF, _, 0, 7) => {
+            (0xF, _, 0x0, 0x7) => {
                 let x = digit2 as usize;
                 self.v_reg[x] = self.dt;
             }
             // Wait Key
-            (0xF, _, 0, 0xA) => {
+            (0xF, _, 0x0, 0xA) => {
                 let x = digit2 as usize;
                 let mut pressed = false;
                 for i in 0..self.keys.len() {
@@ -351,29 +351,29 @@ impl Emu {
                 }
             }
             // dt = Vx
-            (0xF, _, 1, 5) => {
+            (0xF, _, 0x1, 0x5) => {
                 let x = digit2 as usize;
                 self.dt = self.v_reg[x];
             }
             // st = Vx
-            (0xF, _, 1, 8) => {
+            (0xF, _, 0x1, 0x8) => {
                 let x = digit2 as usize;
                 self.st = self.v_reg[x];
             }
             // I += Vx
-            (0xF, _, 1, 0xE) => {
+            (0xF, _, 0x1, 0xE) => {
                 let x = digit2 as usize;
                 let vx = self.v_reg[x] as u16;
                 self.i_reg = self.i_reg.wrapping_add(vx);
             }
             // I = Font
-            (0xF, _, 2, 9) => {
+            (0xF, _, 0x2, 0x9) => {
                 let x = digit2 as usize;
                 let char_sprite = self.v_reg[x] as u16;
                 self.i_reg = char_sprite * 5;
             }
             // Binary Coded Decimal
-            (0xF, _, 3, 3) => {
+            (0xF, _, 0x3, 0x3) => {
                 let x = digit2 as usize;
                 let vx = self.v_reg[x] as f32;
 
@@ -386,7 +386,7 @@ impl Emu {
                 self.ram[(self.i_reg + 2) as usize] = ones;
             }
             // Store V0 - Vx
-            (0xF, _, 5, 5) => {
+            (0xF, _, 0x5, 0x5) => {
                 let x = digit2 as usize;
                 let i = self.i_reg as usize;
                 for idx in 0..=x {
@@ -394,7 +394,7 @@ impl Emu {
                 }
             }
             // Load V0 - Vx
-            (0xF, _, 6, 5) => {
+            (0xF, _, 0x6, 0x5) => {
                 let x = digit2 as usize;
                 let i = self.i_reg as usize;
                 for idx in 0..=x {
