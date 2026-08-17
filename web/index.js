@@ -8,7 +8,7 @@ let anim_frame = 0
 
 const canvas = document.getElementById("canvas")
 canvas.width = WIDTH * SCALE
-canvas.width = HEIGHT * SCALE
+canvas.height = HEIGHT * SCALE
 
 const ctx = canvas.getContext("2d")
 ctx.fillStyle = "black"
@@ -71,6 +71,6 @@ function mainloop(chip8) {
     })
 }
 
-run.catch(console.error)
+run().catch(console.error)
 
 
